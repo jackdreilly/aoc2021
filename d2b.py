@@ -1,6 +1,6 @@
 from pathlib import Path
 
-lines = [x.split(' ') for x in Path("d1b.txt").read_text().splitlines()]
+lines = [x.split(' ') for x in Path("d2.txt").read_text().splitlines()]
 h,v, vv = 0,0, 0
 for a,b in lines:
     b = int(b)
