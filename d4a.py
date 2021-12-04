@@ -22,11 +22,9 @@ class Board:
     def members(self) -> Set[int]:
         return set(sum(self.rows, []))
 
-    @property
+    @cached_property
     def seqs(self) -> Iterable[Set[int]]:
-        for coll in (self.rows, self.columns):
-            for row in coll:
-                yield set(row)
+        return [set(seq) for coll in (self.rows, self.columns) for seq in coll]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -34,20 +32,25 @@ class Bingo:
     board: Board
     numbers: List[int]
 
+    @property
+    def last_number(self) -> int:
+        return self.numbers[-1]
+
+    @cached_property
+    def numset(self) -> Set[int]:
+        return set(self.numbers)
+
     @cached_property
     def is_bingo(self) -> bool:
-        for seq in self.board.seqs:
-            if not seq - set(self.numbers):
-                return True
-        return False
+        return any(not seq - self.numset for seq in self.board.seqs)
 
     @cached_property
     def misses(self) -> Set[int]:
-        return self.board.members - set(self.numbers)
+        return self.board.members - self.numset
 
     @cached_property
     def score(self) -> int:
-        return sum(self.misses) * self.numbers[-1]
+        return sum(self.misses) * self.last_number
 
 
 with open("i4a.txt", "r") as f:
