@@ -111,3 +111,4 @@ class Grid:
 
 grid = Grid.parse("i5.txt")
 print(len(grid.intersections))
+print(grid.grid_view)
