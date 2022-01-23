@@ -1,9 +1,9 @@
 from __future__ import annotations
+
 from collections import defaultdict
 from itertools import islice
-from icecream import ic
-
 from typing import DefaultDict, Tuple
+from icecream import ic
 
 cfg = "bcbdadca"
 cfg = "dcdbbaac"
@@ -37,28 +37,43 @@ def game_string(game):
     )
 
 
-_cache = {}
+def memoize(fn):
+    cache = {}
+
+    def inner(x, *a, **b):
+        args = game_string(x)
+        if args not in cache:
+            cache[args] = fn(x, *a, **b)
+        return cache[args]
+
+    return inner
 
 
-class Min:
-    score = float("inf")
+def print_game(game):
+    ...
+    # print()
+    # print(game)
+    # print()
+    # print(game_string(game))
+    # print()
+    # input()
 
 
-def min_score(
-    game: DefaultDict[Tuple[int, int], str], gen: int = 0, previous_score: int = 0
-) -> int:
-    s = game_string(game)
-    if s in _cache:
-        return _cache[s] + previous_score
-    if previous_score > Min.score:
-        return float("inf")
-    score = previous_score
+@memoize
+def min_score(game: DefaultDict[Tuple[int, int], str], history=[]) -> int:
+    score = 0
 
     def move(a, b, c, d, e):
         new_game = defaultdict(str, game)
         new_game.pop((a, b))
         new_game[(c, d)] = e
-        return new_game, sum(1 for _ in path_fn(a, b, c, d)) * letter_scores[letter]
+        print_game(new_game)
+        new_history = [*history, (c, d, e)]
+        return (
+            new_game,
+            sum(1 for _ in path_fn(a, b, c, d)) * letter_scores[letter],
+            new_history,
+        )
 
     tops = {
         letter: next(
@@ -77,31 +92,31 @@ def min_score(
             )
         )
     }
-    while True:
-        for (i, j), letter in list(game.items()):
-            if not (letter):
+    g,h = game, history
+    class X:
+        game = g
+        history = h
+
+    for (i, j), letter in list(X.game.items()):
+        if not (letter):
+            continue
+        if (top := (tops.get(letter))) and (j) != (letter_home[letter]):
+            if any(
+                (X.game[(i, j)]) for i, j in path_fn(i, j, top - 1, letter_home[letter])
+            ):
                 continue
-            if (top := (tops.get(letter))) and (j) != (letter_home[letter]):
-                if any(
-                    (game[(i, j)])
-                    for i, j in path_fn(i, j, top - 1, letter_home[letter])
-                ):
-                    continue
-                game, other_score = move(i, j, top - 1, letter_home[letter], letter)
-                score += other_score
-                tops[letter] -= 1
-                break
-        else:
-            break
+            X.game, other_score, X.history = move(
+                i, j, top - 1, letter_home[letter], letter
+            )
+            score += other_score
+            tops[letter] -= 1
+    game = X.game
+    history = X.history
     if all(
         game[(i, j)] == l
         for l, j in letter_home.items()
         for i in range(1, total_rows + 1)
     ):
-        if score < Min.score:
-            Min.score = score
-            print(score)
-        _cache[s] = score - previous_score
         return score
 
     min_score_ = float("inf")
@@ -115,13 +130,12 @@ def min_score(
                 continue
             if any(game[l] for l in path_fn(i, j, 0, k)):
                 continue
-            new_game, other_score = move(i, j, 0, k, letter)
-            min_score_ = min(
-                min_score_,
-                min_score(new_game, gen + 1, score + other_score),
-            )
-    _cache[s] = min_score_ - previous_score
-    return min_score_
+            new_game, other_score, new_history = move(i, j, 0, k, letter)
+            other_score += min_score(new_game, new_history)
+            min_score_ = min(min_score_, other_score)
+            if not history:
+                ic(i, j, k, min_score_, new_history)
+    return min_score_ + score
 
 
 def init(cfg):
@@ -130,4 +144,21 @@ def init(cfg):
     )
 
 
+# print(
+#     min_score(
+#         defaultdict(
+#             str,
+#             {
+#                 (2, 2): "A",
+#                 (2, 6): "C",
+#                 (0, 0): "B",
+#                 (0, 1): "C",
+#                 (0, 2): "B",
+#                 (0, 10): "A",
+#                 (1, 8): "D",
+#                 (2, 8): "D",
+#             },
+#         )
+#     )
+# )
 print(min_score(init(cfg)))
