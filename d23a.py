@@ -208,7 +208,7 @@ class Game:
 
 # with open("data.pkl", "wb") as f:
 #     pickle.dump(history, f)
-print(Game.make("DCDBBAAC").min_score[0])
+print(Game.make("DCDBBAAC").min_score)
 # print(game)
 # with open("data.pkl", "rb") as f:
 #     history = pickle.load(f)
